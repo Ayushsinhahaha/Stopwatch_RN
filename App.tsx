@@ -1,118 +1,106 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  Dimensions,
   StyleSheet,
   Text,
-  useColorScheme,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import Header from './src/components/Header';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const screen = Dimensions.get('window');
+const formatNumber = number => `0${number}`.slice(-2);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const getRemaining = time => {
+  const mins = Math.floor(time / 60);
+  const secs = time - mins * 60;
+  return {mins: formatNumber(mins), secs: formatNumber(secs)};
+};
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+const App = () => {
+  const [remainingSecs, setRemainingSecs] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  const {mins, secs} = getRemaining(remainingSecs);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const toggle = () => {
+    setIsActive(!isActive);
   };
 
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+  const reset = () => {
+    setRemainingSecs(0);
+    setIsActive(false);
+  }
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+  useEffect(() => {
+    let interval = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setRemainingSecs(remainingSecs => remainingSecs + 1);
+      }, 1000);
+    } else if (!isActive && remainingSecs !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, remainingSecs]);
+
+  return (
+    <>
+      <Header title={'Stopwatch'} />
+    <View style={styles.container}>
+      <Text style={styles.timerText}>{`${mins}:${secs}`}</Text>
+      <TouchableOpacity onPress={() => toggle()} style={styles.button}>
+        <Text style={styles.buttonText}>{isActive ? 'Pause' : 'Start'}</Text>
+      </TouchableOpacity>
+      {remainingSecs !== 0 ? (
+        <TouchableOpacity onPress={() => reset()} style={styles.resetButton}>
+          <Text style={styles.resetButtonText}>
+            Reset
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+      </>
+  );
+};
 
 export default App;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  button: {
+    borderWidth: 1,
+    backgroundColor: 'dodgerblue',
+    width: 260,
+    height: 100,
+    borderRadius: screen.width / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    fontSize: 45,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  timerText: {
+    fontSize: 90,
+    fontWeight: 'bold',
+  },
+  resetButton: {
+    borderWidth: 1,
+    backgroundColor: 'grey',
+    width: 260,
+    height: 100,
+    borderRadius: screen.width / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  resetButtonText: {
+    fontSize: 45,
+    fontWeight: 'bold',
+  },
+});
